@@ -13,7 +13,7 @@ const ROLES_ENUMERABLE_ABI = [
 ]
 
 // Get all Roles from the event
-async function getAllRolesEvents(rpcUrl: string, address: string, role: string, start: number, latest?: number) {
+export async function getAllRolesEvents(rpcUrl: string, address: string, role: string, start: number, latest?: number) {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     const contract = new ethers.Contract(address, ROLES_EVENTS_ABI, provider);
 
@@ -24,26 +24,34 @@ async function getAllRolesEvents(rpcUrl: string, address: string, role: string, 
     const roleRemovedFilter = contract.filters.RoleRevoked(role ? role : null, null, null)
 
     const blockEnd = latest ?? await provider.getBlockNumber();
+
+    let adminChanged: any[] = [];
+    let added: any[] = [];
+    let removed: any[] = [];
     // 25000 per request
     for(let i = start; i < blockEnd; i += 25000) {
         const events = await contract.queryFilter(roleAdminChangedFilter, i, i + 25000);
         const events2 = await contract.queryFilter(roleAddedFilter, i, i + 25000);
         const events3 = await contract.queryFilter(roleRemovedFilter, i, i + 25000);
         if(events.length > 0) {
-            console.log("Role Admin Changed:", events);
+            adminChanged.concat(events);
         }
         if(events2.length > 0) {
-            console.log("Role Added:", events2);
-            // @ts-ignore
-            console.log("User Added", events2.map(event => (`${event?.args?.role} - ${event?.args?.account}`)));
+            added.concat(events2);
         }
         if(events3.length > 0) {
-            console.log("Role Removed:", events3);
+            removed.concat(events3);
         }
+    }
+
+    return {
+        adminChanged,
+        added,
+        removed
     }
 }
 
-async function inferRolesFromSource(rpcUrl: string, address: string) {
+export async function inferRolesFromSource(rpcUrl: string, address: string) {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     let result = await whatsabi.autoload(address, { provider });
 
@@ -64,11 +72,11 @@ async function inferRolesFromSource(rpcUrl: string, address: string) {
 
 
 // Get Role
-async function doKeccak256(data: string) {
+export function doKeccak256(data: string) {
     return ethers.keccak256(ethers.toUtf8Bytes(data));
 }
 
-async function getRoleMembersFromEnumerable(rpcUrl: string, address: string, role: string) {
+export async function getRoleMembersFromEnumerable(rpcUrl: string, address: string, role: string) {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     const contract = new ethers.Contract(address, ROLES_ENUMERABLE_ABI, provider);
     const roleMembers = await contract.getRoleMemberCount(role);
@@ -87,12 +95,3 @@ async function getRoleMembersFromEnumerable(rpcUrl: string, address: string, rol
 }
 
 
-if(require.main === module) {
-    getRoleMembersFromEnumerable("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa", "0xa7e5f4407fb7a6903f54f2279f3aefe796f21c33a3ea2caae0d0150b895a61a9").then(console.log).catch(console.error);
-    // const start = 22685935;
-    // doKeccak256("REMOVE_BLOCK_LIST_CONTRACT_ROLE").then(console.log);
-    // getAllRolesEvents("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa", "", start).catch(console.error);
-    // const res = inferRolesFromSource("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa").then(console.log);
-    // TODO: use WhatsABI to get the IMPL and from there do the ABI scraping.
-    // console.log(res);
-}   

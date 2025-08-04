@@ -13,7 +13,7 @@ const ROLES_ENUMERABLE_ABI = [
 ]
 
 // Get all Roles from the event
-export async function getAllRolesEvents(rpcUrl: string, address: string, role: string, start: number, latest?: number) {
+export async function getAllRolesEvents(rpcUrl: string, address: string, role: string, start: number, perRequest: number = 25000, latest?: number) {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     const contract = new ethers.Contract(address, ROLES_EVENTS_ABI, provider);
 
@@ -29,10 +29,10 @@ export async function getAllRolesEvents(rpcUrl: string, address: string, role: s
     let added: any[] = [];
     let removed: any[] = [];
     // 25000 per request
-    for(let i = start; i < blockEnd; i += 25000) {
-        const events = await contract.queryFilter(roleAdminChangedFilter, i, i + 25000);
-        const events2 = await contract.queryFilter(roleAddedFilter, i, i + 25000);
-        const events3 = await contract.queryFilter(roleRemovedFilter, i, i + 25000);
+    for(let i = start; i < blockEnd; i += perRequest) {
+        const events = await contract.queryFilter(roleAdminChangedFilter, i, i + perRequest);
+        const events2 = await contract.queryFilter(roleAddedFilter, i, i + perRequest);
+        const events3 = await contract.queryFilter(roleRemovedFilter, i, i + perRequest);
         if(events.length > 0) {
             adminChanged.concat(events);
         }

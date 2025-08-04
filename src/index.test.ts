@@ -24,6 +24,7 @@ if (require.main === module) {
 
 }
 
+
 async function runAllTests() {
     console.log("Running tests...");
 
@@ -36,9 +37,13 @@ async function runAllTests() {
     console.log("Keccak256 result:", keccak256Result);
 
     console.log("Running getAllRolesEvents...");
+    const startTime = new Date().getTime();
     const start = 22685935;
     const events = await getAllRolesEvents("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa", "", start)
     console.log("Events:", events);
+    const endTime = new Date().getTime();
+    console.log("Time taken:", endTime - startTime);
+    
     
     console.log("Running inferRolesFromSource...");
     const roles = await inferRolesFromSource("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa")

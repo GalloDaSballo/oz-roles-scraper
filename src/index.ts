@@ -13,7 +13,7 @@ const ROLES_ENUMERABLE_ABI = [
 ]
 
 // Get all Roles from the event
-export async function getAllRolesEvents(rpcUrl: string, address: string, role: string, start: number, perRequest: number = 25000, latest?: number) {
+export async function getAllRolesEvents(rpcUrl: string, address: string, role: string, start: number, perRequest: number = 25000, batchSize: number = 40, latest?: number) {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     const contract = new ethers.Contract(address, ROLES_EVENTS_ABI, provider);
 
@@ -28,19 +28,49 @@ export async function getAllRolesEvents(rpcUrl: string, address: string, role: s
     let adminChanged: any[] = [];
     let added: any[] = [];
     let removed: any[] = [];
-    // 25000 per request
+
+    // Create batches of block ranges
+    const blockRanges: Array<{start: number, end: number}> = [];
     for(let i = start; i < blockEnd; i += perRequest) {
-        const events = await contract.queryFilter(roleAdminChangedFilter, i, i + perRequest);
-        const events2 = await contract.queryFilter(roleAddedFilter, i, i + perRequest);
-        const events3 = await contract.queryFilter(roleRemovedFilter, i, i + perRequest);
-        if(events.length > 0) {
-            adminChanged.concat(events);
-        }
-        if(events2.length > 0) {
-            added.concat(events2);
-        }
-        if(events3.length > 0) {
-            removed.concat(events3);
+        blockRanges.push({
+            start: i,
+            end: Math.min(i + perRequest, blockEnd)
+        });
+    }
+
+    // Process batches in parallel
+    for(let i = 0; i < blockRanges.length; i += batchSize) {
+        const batch = blockRanges.slice(i, i + batchSize);
+        
+        const batchPromises = batch.map(async (range) => {
+            // Run all 3 filter queries in parallel for this range
+            const [adminEvents, addedEvents, removedEvents] = await Promise.all([
+                contract.queryFilter(roleAdminChangedFilter, range.start, range.end),
+                contract.queryFilter(roleAddedFilter, range.start, range.end),
+                contract.queryFilter(roleRemovedFilter, range.start, range.end)
+            ]);
+
+            return {
+                adminEvents,
+                addedEvents,
+                removedEvents
+            };
+        });
+
+        // Wait for all requests in this batch to complete
+        const batchResults = await Promise.all(batchPromises);
+
+        // Collect results from this batch
+        for (const result of batchResults) {
+            if (result.adminEvents.length > 0) {
+                adminChanged.push(...result.adminEvents);
+            }
+            if (result.addedEvents.length > 0) {
+                added.push(...result.addedEvents);
+            }
+            if (result.removedEvents.length > 0) {
+                removed.push(...result.removedEvents);
+            }
         }
     }
 

@@ -29,7 +29,7 @@ async function runAllTests() {
     console.log("Running tests...");
 
     console.log("Running getRoleMembersFromEnumerable...");
-    const members = await getRoleMembersFromEnumerable("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa", "0xa7e5f4407fb7a6903f54f2279f3aefe796f21c33a3ea2caae0d0150b895a61a9")
+    const members = await getRoleMembersFromEnumerable("https://eth.llamarpc.com", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa", "0xa7e5f4407fb7a6903f54f2279f3aefe796f21c33a3ea2caae0d0150b895a61a9")
     console.log("Members:", members);
     
     console.log("Running doKeccak256...");
@@ -39,13 +39,13 @@ async function runAllTests() {
     console.log("Running getAllRolesEvents...");
     const startTime = new Date().getTime();
     const start = 22685935;
-    const events = await getAllRolesEvents("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa", "", start)
+    const events = await getAllRolesEvents("https://eth.llamarpc.com", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa", "", start)
     console.log("Events:", events);
     const endTime = new Date().getTime();
     console.log("Time taken:", endTime - startTime);
     
     
     console.log("Running inferRolesFromSource...");
-    const roles = await inferRolesFromSource("http://172.33.0.4:8545", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa")
+    const roles = await inferRolesFromSource("https://eth.llamarpc.com", "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa")
     console.log("Roles:", roles);
 }

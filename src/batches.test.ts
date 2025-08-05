@@ -3,7 +3,7 @@ import { getAllRolesEvents } from "./index";
 async function testGetAllRolesEventsBatching() {
     console.log("Testing getAllRolesEvents batch processing...");
     
-    const rpcUrl = "http://172.33.0.4:8545";
+    const rpcUrl = "https://eth.llamarpc.com";
     const address = "0xd5f7838f5c461feff7fe49ea5ebaf7728bb0adfa";
     const start = 22685935;
     
